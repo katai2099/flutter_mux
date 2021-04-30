@@ -6,8 +6,18 @@ import 'package:http/http.dart' as http;
 import 'package:mux_flutter/streaming.dart';
 import 'package:mux_flutter/watch_stream.dart';
 import 'package:mux_flutter/model/liveStream.dart';
+import 'package:rtmp_publisher/camera.dart';
 
-void main() {
+Future <void> main() async {
+
+  // Fetch the available cameras before initializing the app.
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    cameras = await availableCameras();
+  } on CameraException catch (e) {
+    logError(e.code, e.description);
+  }
+
   runApp(MyApp());
 }
 
@@ -33,12 +43,12 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
 
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
     new GlobalKey<RefreshIndicatorState>();
 
   List streamData = [];
+
 
   getListOfAsset() async{
     print("getAsset");
@@ -54,7 +64,7 @@ class _MyHomePageState extends State<MyHomePage> {
   getListOfStream() async{
     print("getStream");
     try{
-    var url = Uri.parse("https://a4c7575036de.ngrok.io/live-streams");
+    var url = Uri.parse("https://313a7ce66ff5.ngrok.io/live-streams");
     http.Response response = await http.get(url);
     debugPrint(response.body);
     List data = jsonDecode(response.body);
@@ -75,11 +85,11 @@ class _MyHomePageState extends State<MyHomePage> {
     print("create a new stream");
     Map data;
     try{
-      var url = Uri.parse("https://a4c7575036de.ngrok.io/newStream");
+      var url = Uri.parse("https://313a7ce66ff5.ngrok.io/newStream");
     http.Response response = await http.post(url);
     data = json.decode(response.body);
 
-    Navigator.push(context, MaterialPageRoute(builder: (context)=>CameraApp(streamingUrl: data['stream_key'],)),
+    Navigator.push(context, MaterialPageRoute(builder: (context)=>CameraApp(streamingUrl: data['stream_key'],cams : cameras)),
           );
     debugPrint(response.body);
     }catch(err){
@@ -90,7 +100,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Future <List> getStreamList() async{
     print("getStream");
     try{
-    var url = Uri.parse("https://a4c7575036de.ngrok.io/live-streams");
+    var url = Uri.parse("https://313a7ce66ff5.ngrok.io/live-streams");
     http.Response response = await http.get(url);
     debugPrint(response.body);
     List data = jsonDecode(response.body);
@@ -98,7 +108,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }catch(err){
       debugPrint(err.toString());
     }
-    return null;
+    return [];
   }
 
   Future<Null> _refresh() {
@@ -122,9 +132,16 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-
+  void initState() {
+    // TODO: implement initState
+    super.initState();
     getListOfStream();
+    print('length of camera description is $cameras.length');
+
+  }
+
+  @override
+  Widget build(BuildContext context) {
 
     return Scaffold(
       appBar: AppBar(
@@ -158,3 +175,5 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+
+List<CameraDescription> cameras = [];

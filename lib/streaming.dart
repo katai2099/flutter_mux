@@ -57,6 +57,7 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
     super.initState();
     _textFieldController = TextEditingController(text: "rtmp://live.mux.com/app/$streamingUrl");
     WidgetsBinding.instance.addObserver(this);
+  
   }
 
   @override
@@ -701,31 +702,19 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
 class CameraApp extends StatelessWidget {
 
   final String streamingUrl ;
-  CameraApp({Key key, this.streamingUrl}) : super(key: key);
-
-   Future<void> startUp() async{
-     print("$streamingUrl");
-     try {
-    WidgetsFlutterBinding.ensureInitialized();
-    cameras = await availableCameras();
-  } on CameraException catch (e) {
-    logError(e.code, e.description);
-  }
-  }
-
+  final List<CameraDescription> cams;
+  CameraApp({Key key, this.streamingUrl,this.cams}) : super(key: key) ;
 
   @override
   Widget build(BuildContext context) {
-
-    startUp();
-
+    cameras = cams;
     return MaterialApp(
       home: CameraExampleHome(url : streamingUrl),
     );
   }
-
-
 }
+
+
 
 
 List<CameraDescription> cameras = [];
