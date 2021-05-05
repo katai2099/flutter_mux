@@ -6,10 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:wakelock/wakelock.dart';
+import 'package:tflite/tflite.dart';
+
+typedef void Callback(List<dynamic> list, int h, int w);
 
 class CameraExampleHome extends StatefulWidget {
-
-  final String url ;
+  final String url;
 
   CameraExampleHome({this.url});
 
@@ -37,9 +39,10 @@ void logError(String code, String message) =>
 
 class _CameraExampleHomeState extends State<CameraExampleHome>
     with WidgetsBindingObserver {
-      String streamingUrl;
-      _CameraExampleHomeState({this.streamingUrl});
+  String streamingUrl;
+  _CameraExampleHomeState({this.streamingUrl});
 
+  bool isDetecting = false;
   CameraController controller;
   String imagePath;
   String videoPath;
@@ -48,16 +51,28 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
   VoidCallback videoPlayerListener;
   bool enableAudio = true;
   bool useOpenGL = true;
-  TextEditingController _textFieldController ;
-      
+  TextEditingController _textFieldController;
+  //katai
+  List<dynamic> _recognitions;
+  int _imageHeight = 0;
+  int _imageWidth = 0;
+
+  loadTfModel() async {
+    await Tflite.loadModel(
+      model: "assets/models/ssd_mobilenet.tflite",
+      labels: "assets/models/labels.txt",
+    );
+  }
+
   Timer _timer;
 
   @override
   void initState() {
     super.initState();
-    _textFieldController = TextEditingController(text: "rtmp://live.mux.com/app/$streamingUrl");
+    _textFieldController =
+        TextEditingController(text: "rtmp://live.mux.com/app/$streamingUrl");
+    loadTfModel();
     WidgetsBinding.instance.addObserver(this);
-  
   }
 
   @override
@@ -340,6 +355,38 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
     if (mounted) {
       setState(() {});
     }
+
+  
+
+
+    controller.startImageStream((CameraImage image) {
+      if (!isDetecting) {
+        isDetecting = true;
+        Tflite.detectObjectOnFrame(
+          bytesList: image.planes.map((plane) {
+            return plane.bytes;
+          }).toList(),
+          model: "SSDMobileNet",
+          imageHeight: image.height,
+          imageWidth: image.width,
+          imageMean: 127.5,
+          imageStd: 127.5,
+          numResultsPerClass: 1,
+          threshold: 0.4,
+        ).then((value) {
+          setState(() {
+            _recognitions = value;
+            _imageHeight = image.height;
+            _imageWidth = image.width;
+          });
+          isDetecting = false;
+          debugPrint("imageHeigth: $_imageHeight imageWidth: $_imageWidth");
+        });
+      }
+    });
+
+    
+
   }
 
   void onTakePictureButtonPressed() {
@@ -558,7 +605,7 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
       videoPath = filePath;
       await controller.startVideoRecordingAndStreaming(videoPath, url);
       _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
-        if(controller != null && controller.value.isStreamingVideoRtmp) {
+        if (controller != null && controller.value.isStreamingVideoRtmp) {
           var stats = await controller.getStreamStatistics();
           print(stats);
         }
@@ -591,7 +638,7 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
       url = myUrl;
       await controller.startVideoStreaming(url);
       _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
-        if(controller != null && controller.value.isStreamingVideoRtmp) {
+        if (controller != null && controller.value.isStreamingVideoRtmp) {
           var stats = await controller.getStreamStatistics();
           print(stats);
         }
@@ -700,21 +747,17 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
 }
 
 class CameraApp extends StatelessWidget {
-
-  final String streamingUrl ;
+  final String streamingUrl;
   final List<CameraDescription> cams;
-  CameraApp({Key key, this.streamingUrl,this.cams}) : super(key: key) ;
+  CameraApp({Key key, this.streamingUrl, this.cams}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     cameras = cams;
     return MaterialApp(
-      home: CameraExampleHome(url : streamingUrl),
+      home: CameraExampleHome(url: streamingUrl),
     );
   }
 }
-
-
-
 
 List<CameraDescription> cameras = [];

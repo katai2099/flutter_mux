@@ -64,7 +64,7 @@ class _MyHomePageState extends State<MyHomePage> {
   getListOfStream() async{
     print("getStream");
     try{
-    var url = Uri.parse("https://313a7ce66ff5.ngrok.io/live-streams");
+    var url = Uri.parse("https://db8210f6001b.ngrok.io/live-streams");
     http.Response response = await http.get(url);
     debugPrint(response.body);
     List data = jsonDecode(response.body);
@@ -83,24 +83,26 @@ class _MyHomePageState extends State<MyHomePage> {
 
   createNewStream() async{
     print("create a new stream");
-    Map data;
-    try{
-      var url = Uri.parse("https://313a7ce66ff5.ngrok.io/newStream");
-    http.Response response = await http.post(url);
-    data = json.decode(response.body);
+    // Map data;
+    // try{
+    //   var url = Uri.parse("https://db8210f6001b.ngrok.io/newStream");
+    // http.Response response = await http.post(url);
+    // data = json.decode(response.body);
 
-    Navigator.push(context, MaterialPageRoute(builder: (context)=>CameraApp(streamingUrl: data['stream_key'],cams : cameras)),
+    // Navigator.push(context, MaterialPageRoute(builder: (context)=>CameraApp(streamingUrl: data['stream_key'],cams : cameras)),
+    //       );
+    // debugPrint(response.body);
+    // }catch(err){
+    //   debugPrint(err.toString());
+    // }
+      Navigator.push(context, MaterialPageRoute(builder: (context)=>CameraApp(streamingUrl: "jjfashion",cams : cameras)),
           );
-    debugPrint(response.body);
-    }catch(err){
-      debugPrint(err.toString());
-    }
   }
 
   Future <List> getStreamList() async{
     print("getStream");
     try{
-    var url = Uri.parse("https://313a7ce66ff5.ngrok.io/live-streams");
+    var url = Uri.parse("https://db8210f6001b.ngrok.io/live-streams");
     http.Response response = await http.get(url);
     debugPrint(response.body);
     List data = jsonDecode(response.body);
@@ -133,7 +135,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
-    // TODO: implement initState
+  
     super.initState();
     getListOfStream();
     print('length of camera description is $cameras.length');
